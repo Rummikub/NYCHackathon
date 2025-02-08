@@ -133,18 +133,18 @@ const suggestions = [
   },
 ];
 
-interface EditorProps {
-  editor: any;
-  setEditor: (editor: any) => void;
-}
+export default function Editor() {
+  const [showSuggestion, setShowSuggestion] = useState(false);
+  const [currentSuggestion, setCurrentSuggestion] = useState<typeof suggestions[0] | null>(null);
+  const [suggestionPosition, setSuggestionPosition] = useState({ x: 0, y: 0 });
+  const ghostDecorationRef = useRef<DecorationSet | null>(null);
 
-const Editor: React.FC<EditorProps> = ({ editor, setEditor }) => {
-  const editorInstance = useEditor({
+  const editor = useEditor({
     extensions: [
-      StarterKit,
       Underline,
+      StarterKit,
       Heading.configure({
-        levels: [1, 2, 3, 4, 5, 6]
+        levels: [1, 2],
       }),
       HighlightPurple,
       HighlightYellow,
@@ -159,30 +159,19 @@ const Editor: React.FC<EditorProps> = ({ editor, setEditor }) => {
     },
   });
 
-  useEffect(() => {
-    if (editorInstance) {
-      setEditor(editorInstance);
-    }
-  }, [editorInstance, setEditor]);
-
-  const [showSuggestion, setShowSuggestion] = useState(false);
-  const [currentSuggestion, setCurrentSuggestion] = useState<typeof suggestions[0] | null>(null);
-  const [suggestionPosition, setSuggestionPosition] = useState({ x: 0, y: 0 });
-  const ghostDecorationRef = useRef<DecorationSet | null>(null);
-
   // Function to update ghost text
   const updateGhostText = useCallback(
     (suggestion: string | null) => {
-      if (!editorInstance) return;
+      if (!editor) return;
   
-      const { state, view } = editorInstance;
+      const { state, view } = editor;
       let newDecoration: DecorationSet;
   
       if (!suggestion) {
         newDecoration = DecorationSet.empty;
       } else {
         // If the editor text doesn’t already end in a space, prepend one
-        const endsWithSpace = /\s$/.test(editorInstance.getText());
+        const endsWithSpace = /\s$/.test(editor.getText());
         const displaySuggestion = endsWithSpace
           ? suggestion
           : ' ' + suggestion;
@@ -200,14 +189,14 @@ const Editor: React.FC<EditorProps> = ({ editor, setEditor }) => {
       ghostDecorationRef.current = newDecoration;
       view.dispatch(state.tr.setMeta(ghostTextPluginKey, newDecoration));
     },
-    [editorInstance]
+    [editor]
   );
   
 
   const handleSuggestion = useCallback(() => {
-    if (!editorInstance) return;
+    if (!editor) return;
   
-    const text = editorInstance.getText();
+    const text = editor.getText();
     console.log('Editor text:', JSON.stringify(text));
   
     // 1. Check if text ends with space
@@ -229,8 +218,8 @@ const Editor: React.FC<EditorProps> = ({ editor, setEditor }) => {
     console.log('Found suggestion?', suggestion);
   
     if (suggestion) {
-      const { view } = editorInstance;
-      const { top, left } = view.coordsAtPos(editorInstance.state.selection.from);
+      const { view } = editor;
+      const { top, left } = view.coordsAtPos(editor.state.selection.from);
   
       setCurrentSuggestion(suggestion);
       setSuggestionPosition({ x: left, y: top + 24 });
@@ -240,25 +229,25 @@ const Editor: React.FC<EditorProps> = ({ editor, setEditor }) => {
       setShowSuggestion(false);
       updateGhostText(null);
     }
-  }, [editorInstance, updateGhostText]);
+  }, [editor, updateGhostText]);
   
   
 
   // Updated applySuggestion to ensure a space before the ghost text if needed
   const applySuggestion = useCallback(() => {
-    if (!editorInstance || !currentSuggestion) return;
+    if (!editor || !currentSuggestion) return;
 
-    const currentText = editorInstance.getText();
+    const currentText = editor.getText();
     // Use a regex to check if the text ends with any whitespace
     const insertion = /\s$/.test(currentText)
       ? currentSuggestion.completion
       : ' ' + currentSuggestion.completion;
-    editorInstance.commands.insertContent(insertion);
+    editor.commands.insertContent(insertion);
     setShowSuggestion(false);
-  }, [editorInstance, currentSuggestion]);
+  }, [editor, currentSuggestion]);
 
   useEffect(() => {
-    if (!editorInstance) return;
+    if (!editor) return;
 
     const updateListener = () => {
       handleSuggestion();
@@ -271,14 +260,14 @@ const Editor: React.FC<EditorProps> = ({ editor, setEditor }) => {
       }
     };
 
-    editorInstance.on('update', updateListener);
+    editor.on('update', updateListener);
     document.addEventListener('keydown', keydownListener);
 
     return () => {
-      editorInstance.off('update', updateListener);
+      editor.off('update', updateListener);
       document.removeEventListener('keydown', keydownListener);
     };
-  }, [editorInstance, handleSuggestion, showSuggestion, currentSuggestion, applySuggestion]);
+  }, [editor, handleSuggestion, showSuggestion, currentSuggestion, applySuggestion]);
 
   const MenuBar = ({ editor }: { editor: any }) => {
     if (!editor) {
@@ -361,30 +350,44 @@ const Editor: React.FC<EditorProps> = ({ editor, setEditor }) => {
 
   return (
     <div className="flex flex-col h-full bg-white rounded-lg relative">
-      <MenuBar editor={editorInstance} />
+      <MenuBar editor={editor} />
       <EditorContent
-        editor={editorInstance}
-        className="flex-1 overflow-y-auto px-12 py-8 text-gray-900 prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none prose-headings:text-gray-900 prose-p:text-gray-800"
+        editor={editor}
+        className="flex-1 overflow-y-auto px-12 py-8 text-gray-800 prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none"
       />
 
       {/* Autocomplete popup */}
       {showSuggestion && currentSuggestion && (
         <div
-          className="absolute bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-gray-800"
+          className="fixed bg-white rounded-lg shadow-xl border border-gray-200 p-3 w-80 animate-fade-in z-50"
           style={{
             top: suggestionPosition.y,
             left: suggestionPosition.x,
           }}
         >
-          <div className="font-medium mb-2">Suggestion:</div>
-          <div>{currentSuggestion.completion}</div>
-          <div className="mt-2 text-sm text-gray-600">
-            Press Tab to accept
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
+              <span className="text-blue-600 text-xs">✨</span>
+            </div>
+            <span className="text-sm font-medium text-gray-700">AI Suggestion</span>
+          </div>
+
+          <p className="text-sm text-gray-600 mb-3">{currentSuggestion.description}</p>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-md">Tab</kbd>
+              <span className="text-xs text-gray-500">to accept</span>
+            </div>
+            <button
+              onClick={applySuggestion}
+              className="px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Apply
+            </button>
           </div>
         </div>
       )}
     </div>
   );
-};
-
-export default Editor;
+}
