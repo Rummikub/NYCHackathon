@@ -99,7 +99,9 @@ export default function AISidebar() {
               🎤
             </button>
           </div>
-          <button className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors font-medium">
+          <button 
+          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors font-medium"
+         >
             Send
           </button>
         </div>

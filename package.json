@@ -21,6 +21,7 @@
     "@tiptap/starter-kit": "^2.11.5",
     "next": "15.1.6",
     "node": "^23.7.0",
+    "openai": "^4.83.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
