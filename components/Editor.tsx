@@ -1,5 +1,6 @@
 'use client';
 
+import Underline from '@tiptap/extension-underline'
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Heading from '@tiptap/extension-heading';
@@ -73,6 +74,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
 export default function Editor() {
   const editor = useEditor({
     extensions: [
+      Underline,
       StarterKit,
       Heading.configure({
         levels: [1, 2],
