@@ -305,8 +305,7 @@ export default function Editor({ content }: EditorProps) {
   useEffect(() => {
     if (editor && content) {
       editor.commands.setContent(content);
-      setAnimate(true);
-      setTimeout(() => setAnimate(false), 500);
+
     }
   }, [content, editor]);
   const MenuBar = ({ editor }: { editor: any }) => {
