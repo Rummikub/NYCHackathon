@@ -23,6 +23,24 @@ const mockSuggestions = [
   },
 ];
 
+const mockReferences = [
+  {
+    id: 1,
+    title: 'Understanding AI',
+    content: 'A comprehensive guide to AI technologies and their applications.',
+  },
+  {
+    id: 2,
+    title: 'Machine Learning Basics',
+    content: 'An introduction to machine learning concepts and techniques.',
+  },
+  {
+    id: 3,
+    title: 'Deep Learning Explained',
+    content: 'A detailed overview of deep learning and its impact on AI.',
+  },
+];
+
 export default function AISidebar() {
   const [activeTab, setActiveTab] = useState('suggestions');
 
@@ -68,23 +86,40 @@ export default function AISidebar() {
 
       {/* Content Area */}
       <div className="flex-1 overflow-auto p-3 space-y-3">
-        {mockSuggestions.map((suggestion) => (
-          <div
-            key={suggestion.id}
-            className="p-3 bg-white rounded-lg border border-gray-100 hover:border-blue-100 transition-colors"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-4 h-4 rounded bg-blue-100 flex items-center justify-center">
-                <span className="text-blue-600 text-xs">✓</span>
+        {activeTab === 'suggestions' ? (
+          mockSuggestions.map((suggestion) => (
+            <div
+              key={suggestion.id}
+              className="p-3 bg-white rounded-lg border border-gray-100 hover:border-blue-100 transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-4 h-4 rounded bg-blue-100 flex items-center justify-center">
+                  <span className="text-blue-600 text-xs">✓</span>
+                </div>
+                <h3 className="text-xs font-medium text-gray-900">
+                  {suggestion.title}
+                </h3>
               </div>
-              <h3 className="text-xs font-medium text-gray-900">
-                {suggestion.title}
-              </h3>
+              <p className="text-xs text-gray-600 leading-relaxed pl-6">{suggestion.content}</p>
             </div>
-            <p className="text-xs text-gray-600 leading-relaxed pl-6">{suggestion.content}</p>
-          </div>
-        ))}
+          ))
+        ) : (
+          mockReferences.map((reference) => (
+            <div
+              key={reference.id}
+              className="p-3 bg-white rounded-lg border border-gray-100 hover:border-blue-100 transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-xs font-medium text-gray-900">
+                  {reference.title}
+                </h3>
+              </div>
+              <p className="text-xs text-gray-600 leading-relaxed pl-6">{reference.content}</p>
+            </div>
+          ))
+        )}
       </div>
+
 
       {/* Input Area */}
       <div className="p-3 border-t bg-white">
