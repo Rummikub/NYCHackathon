@@ -1,8 +1,6 @@
 "use client";
 
 import dynamic from 'next/dynamic';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
 import { useState } from 'react';
 
 const Editor = dynamic(() => import('../components/Editor'), {
@@ -13,18 +11,23 @@ const AISidebar = dynamic(() => import('../components/AISidebar'), {
   ssr: false,
 });
 
-const TableOfContents = dynamic(() => import('../components/TableOfContents'), {
-  ssr: false,
-});
-
 const FileList = dynamic(() => import('../components/FileList'), {
   ssr: false,
 });
 
+const TableOfContents = dynamic(() => import('../components/TableOfContents'), {
+  ssr: false,
+});
+
 export default function Home() {
-  const [editor, setEditor] = useState<any>(null);
-  const [isTocOpen, setIsTocOpen] = useState(false);
+  const [editorContent, setEditorContent] = useState('');
   const [isFileListOpen, setIsFileListOpen] = useState(false);
+  const [isTocOpen, setIsTocOpen] = useState(false);
+  const [editor, setEditor] = useState<any>(null);
+
+  const handleUpdateContent = (content: string) => {
+    setEditorContent(content);
+  };
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -48,7 +51,7 @@ export default function Home() {
       </nav>
 
       {/* Table of Contents */}
-      <TableOfContents 
+      <TableOfContents
         isOpen={isTocOpen}
         onClose={() => setIsTocOpen(false)}
         editor={editor}
@@ -81,13 +84,18 @@ export default function Home() {
         
         {/* Editor area */}
         <div className="flex-1 overflow-auto p-8 max-w-4xl mx-auto w-full">
-          <Editor editor={editor} setEditor={setEditor} />
+          <Editor
+            content={editorContent}
+            onInit={setEditor}
+            shouldUpdate={false}
+            onUpdateComplete={() => {}}
+          />
         </div>
       </main>
 
       {/* AI Sidebar */}
       <aside className="w-80 border-l border-gray-200 bg-white">
-        <AISidebar />
+        <AISidebar onUpdateContent={handleUpdateContent} />
       </aside>
     </div>
   );

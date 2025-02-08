@@ -1,8 +1,15 @@
-'use client';
-
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Editor } from '@tiptap/react';
-import { FaChevronDown, FaChevronRight, FaSearch } from 'react-icons/fa';
+
+interface HeadingItem {
+  id: string;
+  text: string;
+  level: number;
+  position: number;
+  number: string;
+  isCollapsed: boolean;
+  children: HeadingItem[];
+}
 
 interface TableOfContentsProps {
   isOpen: boolean;
@@ -10,134 +17,98 @@ interface TableOfContentsProps {
   editor: Editor | null;
 }
 
-interface HeadingItem {
-  id: string;
-  level: number;
-  text: string;
-  position: number;
-  children: HeadingItem[];
-  isCollapsed?: boolean;
-  number?: string;
-}
-
 const TableOfContents: React.FC<TableOfContentsProps> = ({ isOpen, onClose, editor }) => {
   const [headings, setHeadings] = useState<HeadingItem[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [showNumbers, setShowNumbers] = useState(true);
-  const [filteredHeadings, setFilteredHeadings] = useState<HeadingItem[]>([]);
 
-  const buildHeadingTree = (flatHeadings: Omit<HeadingItem, 'children'>[]) => {
+  const buildTableOfContents = () => {
+    if (!editor) return [];
+
+    const headings: HeadingItem[] = [];
+    let currentNumber = [0];
+
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name === 'heading') {
+        const level = node.attrs.level;
+        while (currentNumber.length < level) currentNumber.push(1);
+        while (currentNumber.length > level) currentNumber.pop();
+        currentNumber[currentNumber.length - 1]++;
+
+        const id = `heading-${pos}`;
+        const text = node.textContent;
+        const number = currentNumber.join('.');
+
+        headings.push({
+          id,
+          text,
+          level,
+          position: pos,
+          number,
+          isCollapsed: false,
+          children: [],
+        });
+      }
+    });
+
+    // Build hierarchy
     const root: HeadingItem[] = [];
     const stack: HeadingItem[] = [];
-    let counter = [0, 0, 0, 0, 0, 0];
 
-    flatHeadings.forEach((heading) => {
-      const level = heading.level - 1;
-      counter[level]++;
-      // Reset lower level counters
-      for (let i = level + 1; i < counter.length; i++) {
-        counter[i] = 0;
-      }
-
-      const number = showNumbers 
-        ? counter.slice(0, level + 1).join('.') 
-        : '';
-
-      const newHeading: HeadingItem = {
-        ...heading,
-        children: [],
-        number
-      };
-
-      while (
-        stack.length > 0 &&
-        stack[stack.length - 1].level >= heading.level
-      ) {
+    headings.forEach(heading => {
+      while (stack.length > 0 && stack[stack.length - 1].level >= heading.level) {
         stack.pop();
       }
 
       if (stack.length === 0) {
-        root.push(newHeading);
+        root.push(heading);
       } else {
-        stack[stack.length - 1].children.push(newHeading);
+        stack[stack.length - 1].children.push(heading);
       }
 
-      stack.push(newHeading);
+      stack.push(heading);
     });
 
     return root;
   };
 
   useEffect(() => {
-    if (editor && isOpen) {
+    if (editor) {
+      const updateHeadings = () => {
+        setHeadings(buildTableOfContents());
+      };
+
       updateHeadings();
+      editor.on('update', updateHeadings);
+
+      return () => {
+        editor.off('update', updateHeadings);
+      };
     }
-  }, [editor, isOpen, showNumbers]);
-
-  const updateHeadings = () => {
-    if (!editor) return;
-
-    const items: Omit<HeadingItem, 'children'>[] = [];
-    let position = 0;
-
-    editor.state.doc.descendants((node, pos) => {
-      if (node.type.name === 'heading') {
-        const id = `heading-${position}`;
-        items.push({
-          id,
-          level: node.attrs.level,
-          text: node.textContent,
-          position: pos
-        });
-        position++;
-      }
-    });
-
-    const tree = buildHeadingTree(items);
-    setHeadings(tree);
-  };
-
-  useEffect(() => {
-    const filterHeadings = (headings: HeadingItem[], query: string): HeadingItem[] => {
-      return headings.reduce((acc: HeadingItem[], heading) => {
-        const matchesSearch = heading.text.toLowerCase().includes(query.toLowerCase());
-        const childMatches = filterHeadings(heading.children, query);
-        
-        if (matchesSearch || childMatches.length > 0) {
-          acc.push({
-            ...heading,
-            children: childMatches,
-            isCollapsed: false // Expand if there's a match
-          });
-        }
-        return acc;
-      }, []);
-    };
-
-    setFilteredHeadings(searchQuery ? filterHeadings(headings, searchQuery) : headings);
-  }, [searchQuery, headings]);
-
-  const toggleCollapse = (headingId: string) => {
-    const toggleHeading = (headings: HeadingItem[]): HeadingItem[] => {
-      return headings.map(heading => {
-        if (heading.id === headingId) {
-          return { ...heading, isCollapsed: !heading.isCollapsed };
-        }
-        return {
-          ...heading,
-          children: toggleHeading(heading.children)
-        };
-      });
-    };
-
-    setHeadings(toggleHeading(headings));
-  };
+  }, [editor]);
 
   const handleHeadingClick = (position: number) => {
     if (editor) {
       editor.commands.setTextSelection(position);
       editor.commands.scrollIntoView();
     }
+  };
+
+  const toggleCollapse = (id: string) => {
+    setHeadings(prevHeadings => {
+      const toggleHeading = (items: HeadingItem[]): HeadingItem[] => {
+        return items.map(item => {
+          if (item.id === id) {
+            return { ...item, isCollapsed: !item.isCollapsed };
+          }
+          if (item.children.length > 0) {
+            return { ...item, children: toggleHeading(item.children) };
+          }
+          return item;
+        });
+      };
+
+      return toggleHeading(prevHeadings);
+    });
   };
 
   const renderHeading = (heading: HeadingItem, level: number = 0) => {
@@ -148,30 +119,37 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ isOpen, onClose, edit
         <div
           className="flex items-center hover:bg-gray-100 rounded p-2 transition-colors group"
           style={{
-            paddingLeft: `${level * 1.5}rem`,
+            paddingLeft: `${(heading.level - 1) * 24}px`,
+            cursor: 'pointer'
           }}
+          onClick={() => handleHeadingClick(heading.position)}
         >
           {hasChildren && (
             <button
-              onClick={() => toggleCollapse(heading.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleCollapse(heading.id);
+              }}
               className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-800"
             >
-              {heading.isCollapsed ? <FaChevronRight size={12} /> : <FaChevronDown size={12} />}
+              {heading.isCollapsed ? '▶' : '▼'}
             </button>
           )}
           {!hasChildren && <div className="w-6" />}
-          <div
-            className="flex-1 cursor-pointer"
-            onClick={() => handleHeadingClick(heading.position)}
-          >
+          <div className="flex-1 flex items-center">
             {showNumbers && heading.number && (
-              <span className="text-gray-600 mr-2">{heading.number}</span>
+              <span className="text-gray-600 mr-2 min-w-[32px]">{heading.number}</span>
             )}
-            <span className="text-gray-900 hover:text-black">{heading.text}</span>
+            <span className={`text-gray-900 hover:text-black ${
+              heading.level === 1 ? 'font-semibold text-base' :
+              heading.level === 2 ? 'font-medium' : 'font-normal text-sm'
+            }`}>
+              {heading.text}
+            </span>
           </div>
         </div>
         {!heading.isCollapsed && heading.children.length > 0 && (
-          <div className="ml-2">
+          <div>
             {heading.children.map(child => renderHeading(child, level + 1))}
           </div>
         )}
@@ -184,7 +162,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ isOpen, onClose, edit
   return (
     <div className="fixed left-16 top-0 h-screen w-72 bg-white border-r border-gray-200 shadow-lg z-50 flex flex-col">
       <div className="p-4 border-b border-gray-200">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold text-gray-900">Table of Contents</h2>
           <button
             onClick={onClose}
@@ -193,26 +171,16 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ isOpen, onClose, edit
             ✕
           </button>
         </div>
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search headings..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-2 pl-10 border rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600" size={14} />
-        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
-        {filteredHeadings.length === 0 ? (
+        {headings.length === 0 ? (
           <div className="text-gray-600 text-center">
-            {searchQuery ? 'No matching headings found.' : 'No headings found. Add headings to your document to create a table of contents.'}
+            No headings found. Add headings to your document to create a table of contents.
           </div>
         ) : (
           <div className="space-y-1">
-            {filteredHeadings.map(heading => renderHeading(heading))}
+            {headings.map(heading => renderHeading(heading))}
           </div>
         )}
       </div>
