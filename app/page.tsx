@@ -11,8 +11,19 @@ const AISidebar = dynamic(() => import('../components/AISidebar'), {
   ssr: false,
 });
 
+const FileList = dynamic(() => import('../components/FileList'), {
+  ssr: false,
+});
+
+const TableOfContents = dynamic(() => import('../components/TableOfContents'), {
+  ssr: false,
+});
+
 export default function Home() {
   const [editorContent, setEditorContent] = useState('');
+  const [isFileListOpen, setIsFileListOpen] = useState(false);
+  const [isTocOpen, setIsTocOpen] = useState(false);
+  const [editor, setEditor] = useState<any>(null);
 
   const handleUpdateContent = (content: string) => {
     setEditorContent(content);
@@ -25,16 +36,32 @@ export default function Home() {
         <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
           <span className="text-white text-sm">📝</span>
         </div>
-        <div className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer">
+        <div 
+          className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer"
+          onClick={() => setIsTocOpen(!isTocOpen)}
+        >
+          <span className="text-gray-600">📑</span>
+        </div>
+        <div 
+          className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer"
+          onClick={() => setIsFileListOpen(!isFileListOpen)}
+        >
           <span className="text-gray-600">📁</span>
         </div>
-        <div className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer">
-          <span className="text-gray-600">🔍</span>
-        </div>
-        <div className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer">
-          <span className="text-gray-600">⚙️</span>
-        </div>
       </nav>
+
+      {/* Table of Contents */}
+      <TableOfContents
+        isOpen={isTocOpen}
+        onClose={() => setIsTocOpen(false)}
+        editor={editor}
+      />
+
+      {/* File List */}
+      <FileList
+        isOpen={isFileListOpen}
+        onClose={() => setIsFileListOpen(false)}
+      />
 
       {/* Main content area */}
       <main className="flex-1 flex flex-col h-full bg-white">
@@ -57,7 +84,12 @@ export default function Home() {
         
         {/* Editor area */}
         <div className="flex-1 overflow-auto p-8 max-w-4xl mx-auto w-full">
-          <Editor content={editorContent} />
+          <Editor
+            content={editorContent}
+            onInit={setEditor}
+            shouldUpdate={false}
+            onUpdateComplete={() => {}}
+          />
         </div>
       </main>
 

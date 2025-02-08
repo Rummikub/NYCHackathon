@@ -153,11 +153,17 @@ They are utilized to <span class="highlight-purple" data-tooltip="AI excels at p
 
 interface EditorProps {
   content: string;
-  shouldUpdate: boolean;
-  onUpdateComplete: () => void;
+  shouldUpdate?: boolean;
+  onUpdateComplete?: () => void;
+  onInit?: (editor: any) => void;
 }
 
-export default function Editor({ content }: EditorProps) {
+const Editor: React.FC<EditorProps> = ({
+  content,
+  shouldUpdate = true,
+  onUpdateComplete,
+  onInit,
+}) => {
   const [animate, setAnimate] = useState(false);
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [currentSuggestion, setCurrentSuggestion] = useState<typeof suggestions[0] | null>(null);
@@ -308,6 +314,13 @@ export default function Editor({ content }: EditorProps) {
 
     }
   }, [content, editor]);
+
+  useEffect(() => {
+    if (editor && onInit) {
+      onInit(editor);
+    }
+  }, [editor, onInit]);
+
   const MenuBar = ({ editor }: { editor: any }) => {
     if (!editor) {
       return null;
@@ -432,3 +445,5 @@ export default function Editor({ content }: EditorProps) {
     </div>
   );
 }
+
+export default Editor;
