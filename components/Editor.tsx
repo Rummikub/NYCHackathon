@@ -8,6 +8,8 @@ import { useCallback, useState, useEffect, useRef } from 'react';
 import { Mark, mergeAttributes, Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
+import { Insertion } from "../extensions/insertion";
+import { Deletion } from "../extensions/deletion";
 
 // Create a PluginKey for ghost text
 const ghostTextPluginKey = new PluginKey('ghost-text');
@@ -109,10 +111,16 @@ const HighlightOrange = Mark.create({
   },
 });
 
-const mockText = `<h1>The Impact of Artificial Intelligence on Modern Society</h1>
-<p>In recent years, artificial intelligence has <span class="highlight-purple" data-tooltip="Consider using a more specific verb">made</span> significant changes to how we live and work. The technology <span class="highlight-yellow" data-tooltip="Passive voice detected">has been implemented</span> across various industries, from healthcare to transportation.</p>
-<p>The rapid advancement of AI technology <span class="highlight-orange" data-tooltip="Consider breaking this into shorter sentences">has led to numerous breakthroughs in machine learning algorithms and neural networks, which have revolutionized the way computers process and analyze large amounts of data, making it possible to solve increasingly complex problems</span>.</p>
-<p>AI systems <span class="highlight-purple" data-tooltip="Too vague - be more specific">do</span> many important tasks in our daily lives. They <span class="highlight-yellow" data-tooltip="Passive voice detected">are being used</span> to predict weather patterns, diagnose diseases, and even drive cars.</p>`;
+const mockText = `<h1>The Impact of AI on Modern Society</h1>
+<p>Artificial intelligence has <deletion>made</deletion> <insertion>transformed</insertion> how we live and work. 
+The technology <deletion>has been implemented</deletion> <insertion>has revolutionized</insertion> across <span class="highlight-yellow" data-tooltip="Healthcare and transportation are key sectors driving AI innovation">various industries, from healthcare to transportation</span>.</p>
+
+<p>The rapid advancement of AI <deletion>has led to numerous breakthroughs</deletion> 
+<insertion>has driven significant progress</insertion> in <span class="highlight-purple" data-tooltip="Machine learning is a subset of AI that focuses on data-driven learning">machine learning algorithms</span> and neural networks, 
+which <deletion>have revolutionized</deletion> <insertion>have transformed</insertion> the way computers process and analyze large amounts of data.</p>
+
+<p><span class="highlight-orange" data-tooltip="AI systems are becoming increasingly integrated into everyday life">AI systems</span> <deletion>do</deletion> <insertion>perform</insertion> many important tasks in our daily lives. 
+They <deletion>are being used</deletion> <insertion>are utilized</insertion> to <span class="highlight-purple" data-tooltip="AI excels at pattern recognition tasks">predict weather patterns, diagnose diseases, and even drive cars</span>.</p>`;
 
 // Custom suggestion data
 const suggestions = [
@@ -133,16 +141,41 @@ const suggestions = [
   },
 ];
 
-export default function Editor() {
+const updatedMockText = `<h1>The Impact of AI on Modern Society</h1>
+<p>Artificial intelligence has transformed how we live and work <insertion>in the 21st century</insertion>. 
+The technology has revolutionized across <span class="highlight-yellow" data-tooltip="Healthcare and transportation are key sectors driving AI innovation">various industries, from healthcare to transportation</span> <insertion>(Smith et al., 2023)</insertion>.</p>
+
+<p>The rapid advancement of AI has driven significant progress in <span class="highlight-purple" data-tooltip="Machine learning is a subset of AI that focuses on data-driven learning">machine learning algorithms</span> <insertion>, particularly deep learning architectures,</insertion> and neural networks, 
+which have transformed the way computers process and analyze large amounts of data <insertion>with unprecedented accuracy</insertion>.</p>
+
+<p><span class="highlight-orange" data-tooltip="AI systems are becoming increasingly integrated into everyday life">AI systems</span> <insertion>, as demonstrated in recent studies,</insertion> perform many important tasks in our daily lives. 
+They are utilized to <span class="highlight-purple" data-tooltip="AI excels at pattern recognition tasks">predict weather patterns, diagnose diseases, and even drive cars</span> <insertion>with increasing sophistication (Johnson & Lee, 2024)</insertion>.</p>`;
+
+interface EditorProps {
+  content: string;
+  shouldUpdate: boolean;
+  onUpdateComplete: () => void;
+}
+
+export default function Editor({ content }: EditorProps) {
+  const [animate, setAnimate] = useState(false);
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [currentSuggestion, setCurrentSuggestion] = useState<typeof suggestions[0] | null>(null);
   const [suggestionPosition, setSuggestionPosition] = useState({ x: 0, y: 0 });
+  const [editorContent, setEditorContent] = useState(content || mockText);
   const ghostDecorationRef = useRef<DecorationSet | null>(null);
+
+  // Function to update content with AI suggestions
+  const updateContentWithSuggestions = () => {
+    setEditorContent(updatedMockText);
+  };
 
   const editor = useEditor({
     extensions: [
       Underline,
       StarterKit,
+      Insertion,
+      Deletion,
       Heading.configure({
         levels: [1, 2],
       }),
@@ -151,7 +184,7 @@ export default function Editor() {
       HighlightOrange,
       GhostText,
     ],
-    content: mockText,
+    content: editorContent,
     editorProps: {
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
@@ -269,6 +302,13 @@ export default function Editor() {
     };
   }, [editor, handleSuggestion, showSuggestion, currentSuggestion, applySuggestion]);
 
+  useEffect(() => {
+    if (editor && content) {
+      editor.commands.setContent(content);
+      setAnimate(true);
+      setTimeout(() => setAnimate(false), 500);
+    }
+  }, [content, editor]);
   const MenuBar = ({ editor }: { editor: any }) => {
     if (!editor) {
       return null;
@@ -351,10 +391,12 @@ export default function Editor() {
   return (
     <div className="flex flex-col h-full bg-white rounded-lg relative">
       <MenuBar editor={editor} />
-      <EditorContent
-        editor={editor}
-        className="flex-1 overflow-y-auto px-12 py-8 text-gray-800 prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none"
-      />
+      <div className={`transition-all ${animate ? 'animate-fade-in' : ''}`}>
+        <EditorContent
+          editor={editor}
+          className="flex-1 overflow-y-auto px-12 py-8 text-gray-800 prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none"
+        />
+      </div>
 
       {/* Autocomplete popup */}
       {showSuggestion && currentSuggestion && (

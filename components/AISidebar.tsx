@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import TypingAnimation from './TypingAnimation';
+import LoadingDots from './LoadingDots';
 
 const mockSuggestions = [
   {
@@ -23,6 +25,10 @@ const mockSuggestions = [
   },
 ];
 
+const mockEditorContent = `<h1>Sample Content from AI Sidebar</h1>
+<p>This is a sample text that demonstrates how we can pass content from the AI Sidebar to the Editor component. It includes various formatting like <strong>bold</strong> and <em>italic</em> text.</p>
+<p>We can also include multiple paragraphs and different types of content to show the flexibility of our editor.</p>`;
+
 const mockReferences = [
   {
     id: 1,
@@ -41,8 +47,42 @@ const mockReferences = [
   },
 ];
 
-export default function AISidebar() {
+interface AISidebarProps {
+  onUpdateContent: (content: string) => void;
+}
+
+export default function AISidebar({ onUpdateContent }: AISidebarProps) {
   const [activeTab, setActiveTab] = useState('suggestions');
+  const [inputValue, setInputValue] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [responseText, setResponseText] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleSend = () => {
+    if (!inputValue.trim() || isTyping) return;
+    
+    // Pass mock content to editor when sending a message
+ 
+
+    // Mock response for demonstration
+    const mockResponse = "I'll analyze relevant papers and suggest improvements to enhance your document. This might take a moment...";
+    
+    setIsLoading(true);
+    setInputValue('');
+    
+    // Delay before starting to type
+    setTimeout(() => {
+      setIsLoading(false);
+      setIsTyping(true);
+      setResponseText(mockResponse);
+    }, 1500); // 1.5 second delay
+    
+    // Focus back on input after sending
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
 
   return (
     <div className="h-full flex flex-col bg-white">
@@ -122,11 +162,46 @@ export default function AISidebar() {
 
 
       {/* Input Area */}
+      {/* Response Area */}
+      {(isLoading || isTyping) && (
+        <div className="p-3 border-t bg-gray-50">
+          <div className="flex items-start gap-2">
+            <div className="w-6 h-6 bg-blue-600 rounded flex-shrink-0 flex items-center justify-center mt-0.5">
+              <span className="text-white text-xs">AI</span>
+            </div>
+            <div className="flex-1">
+              {isLoading ? (
+                <LoadingDots />
+              ) : (
+                <TypingAnimation
+                  text={responseText}
+                  className="text-sm text-gray-800 leading-relaxed"
+                  onComplete={() => {
+                    setIsTyping(false);
+                    onUpdateContent(mockEditorContent);
+                  }}  
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Input Area */}
       <div className="p-3 border-t bg-white">
         <div className="flex gap-2">
           <div className="flex-1 relative">
             <input
+              ref={inputRef}
               type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
               placeholder="Ask anything..."
               className="w-full pl-3 pr-8 py-1.5 text-sm border border-gray-200 rounded-md text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -135,8 +210,10 @@ export default function AISidebar() {
             </button>
           </div>
           <button 
-          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors font-medium"
-         >
+            onClick={handleSend}
+            disabled={isLoading || isTyping || !inputValue.trim()}
+            className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Send
           </button>
         </div>

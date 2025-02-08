@@ -1,8 +1,6 @@
 "use client";
 
 import dynamic from 'next/dynamic';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
 import { useState } from 'react';
 
 const Editor = dynamic(() => import('../components/Editor'), {
@@ -14,6 +12,12 @@ const AISidebar = dynamic(() => import('../components/AISidebar'), {
 });
 
 export default function Home() {
+  const [editorContent, setEditorContent] = useState('');
+
+  const handleUpdateContent = (content: string) => {
+    setEditorContent(content);
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Navigation Sidebar */}
@@ -53,13 +57,13 @@ export default function Home() {
         
         {/* Editor area */}
         <div className="flex-1 overflow-auto p-8 max-w-4xl mx-auto w-full">
-          <Editor />
+          <Editor content={editorContent} />
         </div>
       </main>
 
       {/* AI Sidebar */}
       <aside className="w-80 border-l border-gray-200 bg-white">
-        <AISidebar />
+        <AISidebar onUpdateContent={handleUpdateContent} />
       </aside>
     </div>
   );
