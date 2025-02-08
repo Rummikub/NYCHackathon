@@ -79,6 +79,111 @@
   @apply text-gray-400 float-left h-0 pointer-events-none;
 }
 
+/* Highlighting styles */
+.highlight-purple {
+  @apply relative cursor-help transition-all duration-200;
+  background: linear-gradient(120deg, #e9d5ff 0%, #e9d5ff 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 0.2em;
+  background-position: 0 88%;
+  box-decoration-break: clone;
+  text-shadow: 0.03em 0 #fff, -0.03em 0 #fff, 0 0.03em #fff, 0 -0.03em #fff;
+}
+
+.highlight-purple:hover {
+  @apply bg-purple-100;
+  background-size: 100% 100%;
+  text-shadow: none;
+}
+
+.highlight-yellow {
+  @apply relative cursor-help transition-all duration-200;
+  background: linear-gradient(120deg, #fef9c3 0%, #fef9c3 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 0.2em;
+  background-position: 0 88%;
+  box-decoration-break: clone;
+  text-shadow: 0.03em 0 #fff, -0.03em 0 #fff, 0 0.03em #fff, 0 -0.03em #fff;
+}
+
+.highlight-yellow:hover {
+  @apply bg-yellow-100;
+  background-size: 100% 100%;
+  text-shadow: none;
+}
+
+.highlight-orange {
+  @apply relative cursor-help transition-all duration-200;
+  background: linear-gradient(120deg, #ffedd5 0%, #ffedd5 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 0.2em;
+  background-position: 0 88%;
+  box-decoration-break: clone;
+  text-shadow: 0.03em 0 #fff, -0.03em 0 #fff, 0 0.03em #fff, 0 -0.03em #fff;
+}
+
+.highlight-orange:hover {
+  @apply bg-orange-100;
+  background-size: 100% 100%;
+  text-shadow: none;
+}
+
+/* Tooltip styles */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: pre-wrap;
+  max-width: 200px;
+  @apply bg-gray-800 text-white text-xs leading-relaxed py-2 px-3 rounded-lg shadow-xl z-50;
+  animation: tooltipFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-tooltip]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  @apply w-2.5 h-2.5 bg-gray-800 z-50;
+  animation: tooltipFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tooltipFadeIn {
+  from { 
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Ghost text styling */
+.ghost-text {
+  @apply text-gray-400 select-none pointer-events-none;
+  position: absolute;
+  animation: ghostTextFadeIn 0.2s ease-out;
+}
+
+@keyframes ghostTextFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(4px);
+  }
+  to {
+    opacity: 0.6;
+    transform: translateX(0);
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
