@@ -63,9 +63,6 @@ export default function Home() {
           webkitdirectory="" // Allow directory selection (Chrome/Edge)
           directory="" // Allow directory selection (Firefox)
         />
-        <div className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer">
-          <span className="text-gray-600">🔍</span>
-        </div>
       </nav>
 
       {/* Table of Contents */}
