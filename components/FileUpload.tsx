@@ -33,7 +33,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect }) => {
         title="Upload File"
       >
         <span className="text-gray-600">🔍</span>
-      </div>
+    </div>
     </>
   );
 };

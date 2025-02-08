@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 
 const Editor = dynamic(() => import('../components/Editor'), {
   ssr: false,
@@ -17,23 +17,14 @@ const TableOfContents = dynamic(() => import('../components/TableOfContents'), {
   ssr: false,
 });
 
+const FileList = dynamic(() => import('../components/FileList'), {
+  ssr: false,
+});
+
 export default function Home() {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isTocOpen, setIsTocOpen] = useState(false);
   const [editor, setEditor] = useState<any>(null);
-
-  const handleFolderClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      // Handle the selected files here
-      console.log('Selected files:', files);
-      // You can process the files or update your application state here
-    }
-  };
+  const [isTocOpen, setIsTocOpen] = useState(false);
+  const [isFileListOpen, setIsFileListOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -50,19 +41,10 @@ export default function Home() {
         </div>
         <div 
           className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer"
-          onClick={handleFolderClick}
+          onClick={() => setIsFileListOpen(!isFileListOpen)}
         >
           <span className="text-gray-600">📁</span>
         </div>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileSelect}
-          className="hidden"
-          multiple // Allow multiple file selection
-          webkitdirectory="" // Allow directory selection (Chrome/Edge)
-          directory="" // Allow directory selection (Firefox)
-        />
       </nav>
 
       {/* Table of Contents */}
@@ -70,6 +52,12 @@ export default function Home() {
         isOpen={isTocOpen}
         onClose={() => setIsTocOpen(false)}
         editor={editor}
+      />
+
+      {/* File List */}
+      <FileList
+        isOpen={isFileListOpen}
+        onClose={() => setIsFileListOpen(false)}
       />
 
       {/* Main content area */}
