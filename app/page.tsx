@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 const Editor = dynamic(() => import('../components/Editor'), {
   ssr: false,
@@ -13,7 +13,28 @@ const AISidebar = dynamic(() => import('../components/AISidebar'), {
   ssr: false,
 });
 
+const TableOfContents = dynamic(() => import('../components/TableOfContents'), {
+  ssr: false,
+});
+
 export default function Home() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isTocOpen, setIsTocOpen] = useState(false);
+  const [editor, setEditor] = useState<any>(null);
+
+  const handleFolderClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      // Handle the selected files here
+      console.log('Selected files:', files);
+      // You can process the files or update your application state here
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Navigation Sidebar */}
@@ -21,16 +42,38 @@ export default function Home() {
         <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
           <span className="text-white text-sm">📝</span>
         </div>
-        <div className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer">
+        <div 
+          className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer"
+          onClick={() => setIsTocOpen(!isTocOpen)}
+        >
+          <span className="text-gray-600">📑</span>
+        </div>
+        <div 
+          className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer"
+          onClick={handleFolderClick}
+        >
           <span className="text-gray-600">📁</span>
         </div>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileSelect}
+          className="hidden"
+          multiple // Allow multiple file selection
+          webkitdirectory="" // Allow directory selection (Chrome/Edge)
+          directory="" // Allow directory selection (Firefox)
+        />
         <div className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer">
           <span className="text-gray-600">🔍</span>
         </div>
-        <div className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 cursor-pointer">
-          <span className="text-gray-600">⚙️</span>
-        </div>
       </nav>
+
+      {/* Table of Contents */}
+      <TableOfContents 
+        isOpen={isTocOpen}
+        onClose={() => setIsTocOpen(false)}
+        editor={editor}
+      />
 
       {/* Main content area */}
       <main className="flex-1 flex flex-col h-full bg-white">
@@ -53,7 +96,7 @@ export default function Home() {
         
         {/* Editor area */}
         <div className="flex-1 overflow-auto p-8 max-w-4xl mx-auto w-full">
-          <Editor />
+          <Editor editor={editor} setEditor={setEditor} />
         </div>
       </main>
 
